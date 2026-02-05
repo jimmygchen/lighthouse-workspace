@@ -1,0 +1,14 @@
+# Ignore the main lighthouse repository
+lighthouse/
+
+# Ignore all lighthouse worktrees (any directory starting with "lighthouse-")
+lighthouse-*/
+
+# Ignore shared build artifacts directory
+shared-target/
+
+# Ignore OS files
+.DS_Store
+
+# Claude Code local settings (permissions are user-specific)
+.claude/settings.local.json
