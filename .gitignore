@@ -7,6 +7,10 @@ lighthouse-*/
 # Ignore shared build artifacts directory
 shared-target/
 
+# Ignore IDE config
+.idea/
+.vscode/
+
 # Ignore OS files
 .DS_Store
 
