@@ -181,6 +181,17 @@ cd lighthouse && git worktree prune
   - Verbose explanations with multiple paragraphs
 - **User approval required**: Always show proposed comments and wait for user approval before publishing to GitHub
 
+#### PR Review Coverage Strategy
+
+For thorough PR reviews, spawn **two parallel agents split by concern** rather than by crate:
+
+1. **Agent 1 — Security**: Unsafe operations, panic paths, untrusted input handling, resource exhaustion, state corruption, cryptographic misuse, error variants that leak information
+2. **Agent 2 — Quality/Resilience**: Error handling patterns, code clarity, test coverage, edge cases, API consistency, graceful degradation, codebase convention adherence
+
+Both agents read the full diff but filter through their respective lens. Overlap between agents (e.g., missing error handling flagged by both) is a signal the issue is worth fixing.
+
+**Split by crate instead only when** the PR is too large for a single agent to hold the full diff in context. In that case, give each per-crate agent both lenses.
+
 ### For Creating Issues
 - **Read**: `./lighthouse/.ai/ISSUES.md`
 - **Purpose**: Guidelines for clear, actionable GitHub issues
@@ -226,20 +237,3 @@ When these instruction files grow too long and need refactoring:
 4. Keep natural language over rigid structure
 
 **Note**: For CODE REVIEW comments specifically - explanations and rationale ("why") are important to make feedback more useful to the author.
-
-## Known Bugs Under Investigation
-
-### Range Sync Unbounded Memory — Critical OOM Bug
-
-**Primary issue**: `SyncingChain.batches` (`BTreeMap<BatchId, RangeSyncBatchInfo<E>>` in `sync/range_sync/chain.rs`) has no hard size limit. `BATCH_BUFFER_SIZE = 5` only limits concurrent *downloading* batches, not total accumulated batches. Completed batches in `AwaitingProcessing` pile up when the beacon processor is congested. On a supernode (128 data column subnets) each batch is ~540 MB. No backpressure from beacon processor to sync, no metrics tracking batch count or memory.
-
-**Confirmed sub-issue: `in_buffer` excludes `AwaitingDownload`, enabling buffer overrun.** While `AwaitingDownload` batches hold no data, `attempt_send_awaiting_download_batches()` (chain.rs:1008-1022) resumes ALL of them with NO buffer limit check. New batches are gated by `include_next_batch()` (checks count > BATCH_BUFFER_SIZE), but resumed batches bypass this entirely. Scenario: batches fail → AwaitingDownload (not counted) → new batches fill buffer to 5 → all AwaitingDownload batches resume simultaneously → all download → all land in AwaitingProcessing → total exceeds 5. On a supernode at ~540 MB/batch this amplifies the OOM.
-
-**Evidence**: Supernode (Lighthouse v8.1.0, 256GB) OOM'd. Logs: 2,464 `gossip_data_column_sidecar` queue-full errors in 53 min, repeated range sync catch-up. Beacon processor queues saturated (data columns 1024, aggregates 4096, attestation delay 16384).
-
-**Key files**:
-- `beacon_node/network/src/sync/range_sync/chain.rs` — batches BTreeMap, BATCH_BUFFER_SIZE, in_buffer check
-- `beacon_node/network/src/sync/range_sync/chain_collection.rs` — ChainCollection
-- `beacon_node/network/src/sync/batch.rs` — BatchState::AwaitingProcessing holds Vec<RpcBlock<E>>
-- `beacon_node/network/src/router.rs:95` — unbounded sync_send channel
-- `beacon_node/network/src/sync/network_context.rs` — register_metrics (missing batch buffer metrics)
