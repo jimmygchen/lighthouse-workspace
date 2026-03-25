@@ -9,6 +9,20 @@
 **This file** (worktree): Git workflow, personal preferences, commit/PR guidelines
 **Lighthouse file**: Development commands, architecture, code quality standards, testing patterns
 
+## General Behavior
+
+When asked to present a plan or review for user approval, STOP and present it. Do not autonomously explore the repo or begin implementation until the user explicitly approves.
+
+## Project Context
+
+This is a Rust-heavy Ethereum consensus client (Lighthouse) codebase. When debugging or investigating issues, always check the most recent logs first and confirm file paths before proceeding.
+
+## Code Review
+
+- Always fetch the latest diff from GitHub rather than relying on locally cached data. Verify the PR's current state before making claims about unaddressed comments or missing changes.
+- Be critically analytical. Do not excuse potential issues just because they "follow existing patterns". Flag real concerns even if the codebase has precedent for the pattern.
+- Always verify spec references against the specific spec version or PR the user indicates. Do not default to local/outdated spec copies.
+
 ## Directory Structure
 
 ```
