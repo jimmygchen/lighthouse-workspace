@@ -10,7 +10,8 @@ lighthouse-workspace/
 ├── CLAUDE.md                # Worktree workflow, commit/PR guidelines
 ├── lighthouse/              # Main Lighthouse clone (you create this)
 ├── shared-target/           # Shared Rust build artifacts
-└── lighthouse-<branch>/     # Worktrees for feature branches
+└── worktrees/               # Worktrees for feature branches
+    └── lighthouse-<branch>/
 ```
 
 Coding guidelines, review standards, and Claude Code skills live in the lighthouse repo under `.ai/` and `.claude/`.
@@ -30,7 +31,7 @@ The workspace uses git worktrees to manage multiple feature branches simultaneou
 
 ```bash
 cd lighthouse
-git worktree add -b feat-my-feature ../lighthouse-feat-my-feature unstable
+git worktree add -b feat-my-feature ../worktrees/lighthouse-feat-my-feature unstable
 ```
 
 All worktrees share a single `shared-target/` directory for Rust builds, saving 10-20GB per branch.

@@ -1,6 +1,6 @@
-# Git Worktree Workflow for Lighthouse
+# Lighthouse Dev Workspace
 
-**Context**: This is `<workspace>/`, a workspace for parallel development using git worktrees. Each Claude Code session starts fresh with no memory of previous sessions.
+**Context**: This is `<workspace>/`, a workspace for parallel development on Lighthouse using git worktrees.
 
 ## ⚠️ CRITICAL: Always Read Both Files
 
@@ -29,13 +29,14 @@ This is a Rust-heavy Ethereum consensus client (Lighthouse) codebase. When debug
 <workspace>/
 ├── .cargo/                  # Root cargo config (shared by all worktrees)
 │   └── config.toml          # Configures shared target directory (./shared-target)
-├── .idea/                   # Shared RustRover/IntelliJ config (copy to worktrees)
-├── .vscode/                 # Shared VSCode config (excludes worktrees from indexing)
+├── .claude/                 # Claude Code config (commands, settings)
+│   └── commands/            # Custom slash commands
 ├── lighthouse/              # Main repository - use for read-only exploration
 │   ├── .git/                # Shared git directory for all worktrees
 │   └── CLAUDE.md            # Lighthouse-specific dev docs (read this!)
 ├── shared-target/           # Shared Rust build artifacts (MUST stay within project root)
-└── lighthouse-<branch>*/    # Worktrees for active development (no target/ dirs)
+└── worktrees/               # All worktrees for active development
+    └── lighthouse-<branch>*/
 ```
 
 **CRITICAL**: `shared-target/` must be inside `<workspace>/` (the project root). Never create or modify directories outside the project root.
@@ -70,100 +71,48 @@ This is a Rust-heavy Ethereum consensus client (Lighthouse) codebase. When debug
 ```bash
 cd <workspace>/lighthouse && \
 BRANCH="<type>-<short-description>" && \
-git worktree add -b "$BRANCH" "../lighthouse-$BRANCH" unstable && \
-echo "gitdir: ../lighthouse/.git/worktrees/lighthouse-$BRANCH" > "../lighthouse-$BRANCH/.git" && \
-mkdir -p "../lighthouse-$BRANCH/.idea" && \
-cp -r ../.idea/{inspectionProfiles,dictionaries,vcs.xml} "../lighthouse-$BRANCH/.idea/" 2>/dev/null || true && \
-cd "../lighthouse-$BRANCH"
+git worktree add -b "$BRANCH" "../worktrees/lighthouse-$BRANCH" unstable && \
+echo "gitdir: ../../lighthouse/.git/worktrees/lighthouse-$BRANCH" > "../worktrees/lighthouse-$BRANCH/.git" && \
+cd "../worktrees/lighthouse-$BRANCH"
 ```
 
 **Branch naming**: `<type>-<short-description>` (e.g., `fix-memory-leak`, `feat-sync-protocol`)
 
 **Notes**:
-- The .git fix uses relative path so git works on both container and host
-- Shared target directory configured at `<workspace>/.cargo/config.toml` applies to all worktrees automatically (saves 10-20GB per worktree)
-- IDE configs (inspections, dictionaries) are copied from root `.idea/` for RustRover consistency
-
-## Container Limitations
-
-**SSH not available**: Container cannot authenticate via SSH to GitHub.
-
-| Works (uses GitHub API) | Doesn't work (needs SSH) |
-|------------------------|--------------------------|
-| `gh pr create` | `git push` / `git fetch origin` |
-| `gh pr close` | `gh pr checkout` |
-| `gh pr view` | `git pull` |
-| `gh api ...` | |
-
-**GPG signing not available**: Container cannot sign commits.
-
-**Workaround**: User runs `git commit`, `git push`, `gh pr checkout` on host.
+- The .git fix uses relative path (`../../lighthouse/` because worktrees are nested one level deeper)
+- Shared target directory via `<workspace>/.cargo/config.toml` applies automatically (saves 10-20GB per worktree)
 
 ## Git Commit Workflow
 
-**Critical**: Container cannot sign commits. User signs on host.
+**Always leave committing to the user.** Stage changes and provide the commit command, but do not commit directly.
 
-### Staging and Committing
-
-1. **Stage changes** (Claude does this):
-   ```bash
-   git add <files>
-   ```
-
-2. **Provide user with commit command** to run on their host:
-   ```bash
-   # Run this on your host terminal:
-   cd /path/to/lighthouse-worktree/lighthouse-<branch-name>
-   git commit -m "Commit message here
-
-   Additional details if needed."
-   ```
-
-3. **Wait for user confirmation** before proceeding
-
-### Commit Message Format
-
-**IMPORTANT**: Do NOT include Claude Code attribution footers or Co-Authored-By lines. This overrides default Claude Code behavior.
-
-Format:
+**Commit message format** — no Claude Code attribution footers or Co-Authored-By lines:
 - First line: Brief summary (imperative mood)
-- Blank line (if additional details needed)
-- Additional details
-- NO "Generated with Claude Code" footer
-- NO Co-Authored-By lines
+- Blank line + additional details if needed
 
 ## Push and Create PR
 
 **CRITICAL**: Never push to `origin` (sigp/lighthouse). Always use your fork remote.
 
-**Recommended (using gh CLI):**
 ```bash
+# Recommended
 gh pr create --draft --base unstable --head <your-github-username>:<branch-name> --title "Your PR Title" --body "PR description"
-```
 
-**Alternative (manual push):**
-```bash
+# Alternative
 git push -u <your-fork-remote> <branch-name>
 ```
 
-## Changing Base Branch (Rebasing onto Different Branch)
-
-If a PR needs to target a different base branch after creation:
+## Changing Base Branch
 
 1. **Stay in the worktree directory** (not `./lighthouse/`!)
-2. **Reset and cherry-pick without committing** (container can't GPG sign):
+2. Reset and cherry-pick without committing:
    ```bash
-   cd <workspace>/lighthouse-<branch-name>
+   cd <workspace>/worktrees/lighthouse-<branch-name>
    git reset --hard origin/<new-base-branch>
    git cherry-pick --no-commit <commit-hash>
    ```
-3. **User commits on host**, then force pushes
-4. **Create new PR** against the correct base branch
-
-**Common mistakes to avoid:**
-- Running `git reset` in `./lighthouse/` instead of the worktree
-- Using `git cherry-pick` without `--no-commit` (fails due to GPG signing)
-- Forgetting to close the old PR before creating the new one
+3. User commits, then force pushes
+4. Create new PR against the correct base branch
 
 ## Worktree Management
 
@@ -172,7 +121,7 @@ If a PR needs to target a different base branch after creation:
 cd lighthouse && git worktree list
 
 # Remove a worktree (when user requests)
-cd lighthouse && git worktree remove ../lighthouse-<branch-name>
+cd lighthouse && git worktree remove ../worktrees/lighthouse-<branch-name>
 
 # Clean up stale references
 cd lighthouse && git worktree prune
@@ -206,48 +155,13 @@ Both agents read the full diff but filter through their respective lens. Overlap
 
 **Split by crate instead only when** the PR is too large for a single agent to hold the full diff in context. In that case, give each per-crate agent both lenses.
 
-### For Creating Issues
-- **Read**: `./lighthouse/.ai/ISSUES.md`
-- **Purpose**: Guidelines for clear, actionable GitHub issues
+### For Issues and PRs
 
-### For Creating Pull Requests
-- **CRITICAL**: Follow `./lighthouse/.ai/ISSUES.md` PR guidelines - natural, concise, direct language
-- **Template**:
-  ```markdown
-  ## Description
-
-  [What does this PR do? Why is it needed? Be concise and technical.]
-
-  Closes #[issue-number]  (if applicable)
-
-  ## Additional Info
-
-  [Breaking changes, performance impacts, migration steps, etc.]
-  ```
-- **Style**: Natural, direct, concise - avoid AI-sounding language, bullet-point lists, or verbose sections
-- **Remember**: NO Claude Code attribution in commits or PR descriptions
+Read `./lighthouse/.ai/ISSUES.md` before creating issues or PRs. Use natural, concise, direct language — no AI-sounding prose, no Claude Code attribution.
 
 ## Key Facts
 
-- **Base branch**: Usually `unstable`, but **ASK the user first** if targeting a release branch (e.g., `release-v8.1`)
+- **Base branch**: Usually `unstable` — **ASK the user first** if targeting a release branch (e.g., `release-v8.1`)
 - **Git hooks**: Shared across all worktrees (in `./lighthouse/.git/hooks`)
 - **Branch isolation**: Git prevents same branch in multiple worktrees
-- **Session isolation**: Each Claude Code session is independent (no shared state)
 - **Parallel builds**: Safe across worktrees; Cargo handles locking
-
-## Refactoring These Instructions
-
-When these instruction files grow too long and need refactoring:
-
-**Goals:**
-- Remove duplicated content (commands, examples)
-- Keep critical information (commands, workflows, rules)
-- Make more concise without losing effectiveness
-
-**Process:**
-1. Ask user first if uncertain about what to remove
-2. Prioritize what makes Claude more effective over brevity alone
-3. Remove obvious duplicates and verbose examples
-4. Keep natural language over rigid structure
-
-**Note**: For CODE REVIEW comments specifically - explanations and rationale ("why") are important to make feedback more useful to the author.
