@@ -9,6 +9,12 @@
       "source": "./plugins/review-lh",
       "description": "Lighthouse PR review workflow: briefing and deep multi-agent analysis",
       "version": "0.1.0"
+    },
+    {
+      "name": "kurtosis-verify",
+      "source": "./plugins/kurtosis-verify",
+      "description": "Start a Kurtosis local testnet and verify behavior via traces, metrics, logs, or beacon API",
+      "version": "0.1.0"
     }
   ]
 }
