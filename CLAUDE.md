@@ -2,6 +2,14 @@
 
 **Context**: This is `<workspace>/`, a workspace for parallel development on Lighthouse using git worktrees.
 
+## First-Time Setup
+
+If `lighthouse/` doesn't exist, clone it before proceeding:
+
+```bash
+git clone https://github.com/sigp/lighthouse.git
+```
+
 ## ⚠️ CRITICAL: Always Read Both Files
 
 **Before implementing any code changes, you MUST read `./lighthouse/CLAUDE.md`** for essential coding standards, error handling patterns, and best practices.
