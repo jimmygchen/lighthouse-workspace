@@ -1,0 +1,15 @@
+[submodule "plugins/review-lh/specs/consensus-specs"]
+	path = plugins/review-lh/specs/consensus-specs
+	url = https://github.com/ethereum/consensus-specs.git
+[submodule "plugins/review-lh/specs/beacon-APIs"]
+	path = plugins/review-lh/specs/beacon-APIs
+	url = https://github.com/ethereum/beacon-APIs.git
+[submodule "plugins/review-lh/specs/builder-specs"]
+	path = plugins/review-lh/specs/builder-specs
+	url = https://github.com/ethereum/builder-specs.git
+[submodule "plugins/review-lh/specs/execution-apis"]
+	path = plugins/review-lh/specs/execution-apis
+	url = https://github.com/ethereum/execution-apis.git
+[submodule "plugins/review-lh/specs/keymanager-APIs"]
+	path = plugins/review-lh/specs/keymanager-APIs
+	url = https://github.com/ethereum/keymanager-APIs.git

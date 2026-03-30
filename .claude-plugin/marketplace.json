@@ -1,0 +1,16 @@
+{
+  "name": "Lighthouse Workspace Plugins",
+  "description": "Custom plugins for Lighthouse development",
+  "plugins": [
+    {
+      "id": "review-lh",
+      "name": "review-lh",
+      "description": "Lighthouse PR review workflow: briefing and deep multi-agent analysis",
+      "source": {
+        "source": "local",
+        "path": "./plugins/review-lh"
+      },
+      "version": "0.1.0"
+    }
+  ]
+}

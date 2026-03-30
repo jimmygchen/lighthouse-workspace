@@ -25,6 +25,21 @@ git clone https://github.com/sigp/lighthouse.git
 claude
 ```
 
+## Plugins
+
+The workspace includes Claude Code plugins under `plugins/`. To install:
+
+```bash
+# Initialize spec submodules (one-time)
+git submodule update --init --recursive
+
+# Install the review plugin via /plugin install in Claude Code
+# Select "review-lh" from the "Lighthouse Workspace Plugins" marketplace
+```
+
+Available plugins:
+- **review-lh** — `/review-lh:review <PR>`: Generates a PR briefing, runs deep multi-agent review (security + quality), then summarizes existing comment threads.
+
 ## Git Worktrees
 
 The workspace uses git worktrees to manage multiple feature branches simultaneously:

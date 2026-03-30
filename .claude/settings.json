@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "lighthouse-workspace": {
+      "source": {
+        "source": "local",
+        "path": "./.claude-plugin/marketplace.json"
+      }
+    }
+  }
+}
