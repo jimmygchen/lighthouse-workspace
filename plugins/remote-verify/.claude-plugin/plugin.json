@@ -1,5 +1,0 @@
-{
-  "name": "remote-verify",
-  "description": "Verify behavior on remote nodes via SSH and Grafana",
-  "version": "0.1.0"
-}

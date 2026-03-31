@@ -1,5 +1,0 @@
-{
-  "name": "kurtosis-verify",
-  "description": "Start a Kurtosis local testnet and verify behavior via traces, metrics, logs, or beacon API",
-  "version": "0.1.0"
-}

@@ -60,7 +60,7 @@ If `$ARGUMENTS` contains `--host`, parse the following flags before any other st
 
 If inline params are present:
 1. Use them directly — **skip Step 1b** (interactive prompts) and **skip AskUserQuestion entirely**. When deploy-pr hands off with `--host`, `--bn-port`, `--log-source`, there is no ambiguity — proceed without confirmation.
-2. Save host entry to `.remote-verify-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false). If `--log-source` is provided, use that instead of the default.
+2. Save host entry to `.node-check-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false). If `--log-source` is provided, use that instead of the default.
 3. If `--grafana-url`, `--grafana-user`, `--grafana-pass` are provided, use them for this session — **skip `.env` loading** for Grafana in Step 2.
 4. The verification condition is whatever follows `--` (not the original full `$ARGUMENTS`).
 5. Proceed to SSH tunnel setup (Step 3) for beacon API only. If `--grafana-url` was provided, it is already tunneled — do not create an additional Grafana tunnel.
@@ -69,7 +69,7 @@ If `$ARGUMENTS` does NOT contain `--host`, continue with the existing interactiv
 
 ---
 
-**Step 1a**: Read `.remote-verify-config.json` from the workspace root. If it doesn't exist, `previous = null`.
+**Step 1a**: Read `.node-check-config.json` from the workspace root. If it doesn't exist, `previous = null`.
 
 **PROHIBITED — the agent must NEVER do any of these:**
 - Ask "single or multiple nodes" as a question
@@ -123,7 +123,7 @@ Parse each entry: if `:port` is present use that, otherwise default to `5052`. A
 ```
 Replace all `<placeholder>` values with actual values from config file. Only include questions relevant to the condition (max 4). Hosts is always included.
 
-**Step 1c**: After user answers, save to `.remote-verify-config.json`:
+**Step 1c**: After user answers, save to `.node-check-config.json`:
 ```json
 {
   "hosts": [
@@ -146,7 +146,7 @@ Source `.env` from the workspace root **only if Grafana is needed** for the cond
 Use SSH control sockets for clean management. **Set up BN and metrics tunnels in parallel** (two separate `ssh -fNL` commands can run simultaneously since they use different local ports):
 
 ```
-SSH_CONTROL="/tmp/remote-verify-%r@%h:%p"
+SSH_CONTROL="/tmp/node-check-%r@%h:%p"
 
 # Find two free ports at once
 python3 -c "

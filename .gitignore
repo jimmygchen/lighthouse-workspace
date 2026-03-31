@@ -17,7 +17,7 @@ shared-target/
 
 # Credentials and local config
 .env
-.remote-verify-config.json
+.node-check-config.json
 
 # Claude Code local settings (user-specific permissions)
 .claude/settings.local.json
