@@ -46,6 +46,29 @@ Condition: $ARGUMENTS
 
 ### 1. Gather connection details
 
+**Step 1.0 — Parse inline connection params from `$ARGUMENTS`**:
+
+If `$ARGUMENTS` contains `--host`, parse the following flags before any other step:
+- `--host user@ip` — SSH host (required for inline mode)
+- `--bn-port N` — beacon node port (default 5052)
+- `--metrics-port N` — metrics port (default 5054)
+- `--grafana-url URL` — Grafana endpoint (pre-tunneled by caller, use directly — no SSH tunnel needed for Grafana)
+- `--grafana-user USER` — Grafana username (use for this session instead of loading from `.env`)
+- `--grafana-pass PASS` — Grafana password (use for this session instead of loading from `.env`)
+- `--log-source PATH` — log file path on remote host, or "journal" for journalctl
+- Everything after a standalone `--` separator is the **verification condition**
+
+If inline params are present:
+1. Use them directly — **skip Step 1b** (interactive prompts)
+2. Save host entry to `.remote-verify-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false). If `--log-source` is provided, use that instead of the default.
+3. If `--grafana-url`, `--grafana-user`, `--grafana-pass` are provided, use them for this session — **skip `.env` loading** for Grafana in Step 2.
+4. The verification condition is whatever follows `--` (not the original full `$ARGUMENTS`).
+5. Proceed to SSH tunnel setup (Step 3) for beacon API only. If `--grafana-url` was provided, it is already tunneled — do not create an additional Grafana tunnel.
+
+If `$ARGUMENTS` does NOT contain `--host`, continue with the existing interactive flow below.
+
+---
+
 **Step 1a**: Read `.remote-verify-config.json` from the workspace root. If it doesn't exist, `previous = null`.
 
 **PROHIBITED — the agent must NEVER do any of these:**
