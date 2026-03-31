@@ -90,14 +90,15 @@ ssh -fN -o ControlMaster=yes -o "ControlPath=/tmp/deploy-pr-ssh-%h" -o StrictHos
 ```
 All subsequent `ssh` commands should use `-o "ControlPath=/tmp/deploy-pr-ssh-%h"` instead of repeating `StrictHostKeyChecking`/`BatchMode`.
 
-Then wait for cloud-init to finish. Cloud-init clones the lighthouse repo as its last step, so use that as the signal:
+Then wait for cloud-init to finish using `cloud-init status --wait`:
 ```
-ssh -o "ControlPath=/tmp/deploy-pr-ssh-%h" root@<ip> "test -d ~/lighthouse"
+ssh -o "ControlPath=/tmp/deploy-pr-ssh-%h" root@<ip> "cloud-init status --wait"
 ```
-Poll every 10s, timeout after 5 minutes. **Do not install any packages or clone repos manually** — cloud-init handles all dependencies (Docker, yq, kurtosis, lighthouse repo).
+Use a **5-minute timeout** for this command. **Do not install any packages or clone repos manually** — cloud-init handles all dependencies (Docker, yq, kurtosis, lighthouse repo).
 
-### Step 5 — Checkout PR branch
+### Step 5 — Fetch and checkout PR branch
 
+Cloud-init already clones the lighthouse repo — do **not** clone it again. Just fetch the PR ref and check it out:
 ```
 ssh -o "ControlPath=/tmp/deploy-pr-ssh-%h" root@<ip> "cd ~/lighthouse && git fetch origin pull/<pr_number>/head:pr-<pr_number> && git checkout pr-<pr_number>"
 ```
@@ -170,12 +171,12 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:<local_grafana_port>/api
 
 If the Grafana tunnel was successfully established (Step 9 health check returned 200), include Grafana params:
 ```
-/remote-verify:verify --host root@<ip> --bn-port <beacon_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <condition>
+/remote-verify:verify --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <condition>
 ```
 
 If the Grafana tunnel failed, omit Grafana params (remote-verify will use beacon API and logs only):
 ```
-/remote-verify:verify --host root@<ip> --bn-port <beacon_port> --log-source /tmp/lighthouse-cl-1.log -- <condition>
+/remote-verify:verify --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --log-source /tmp/lighthouse-cl-1.log -- <condition>
 ```
 
 **If no condition was provided**, print connection details:
@@ -190,7 +191,7 @@ Connection details:
   Logs:       ssh root@<ip> "tail -f /tmp/lighthouse-cl-1.log"
 
 To verify:
-  /remote-verify:verify --host root@<ip> --bn-port <beacon_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <your condition>
+  /remote-verify:verify --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <your condition>
 
 Cleanup:
   - Box auto-expires tomorrow (<expiry_date>)

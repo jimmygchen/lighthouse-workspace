@@ -59,7 +59,7 @@ If `$ARGUMENTS` contains `--host`, parse the following flags before any other st
 - Everything after a standalone `--` separator is the **verification condition**
 
 If inline params are present:
-1. Use them directly — **skip Step 1b** (interactive prompts)
+1. Use them directly — **skip Step 1b** (interactive prompts) and **skip AskUserQuestion entirely**. When deploy-pr-test hands off with `--host`, `--bn-port`, `--log-source`, there is no ambiguity — proceed without confirmation.
 2. Save host entry to `.remote-verify-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false). If `--log-source` is provided, use that instead of the default.
 3. If `--grafana-url`, `--grafana-user`, `--grafana-pass` are provided, use them for this session — **skip `.env` loading** for Grafana in Step 2.
 4. The verification condition is whatever follows `--` (not the original full `$ARGUMENTS`).
@@ -143,22 +143,41 @@ Source `.env` from the workspace root **only if Grafana is needed** for the cond
 
 ### 3. SSH tunnels
 
-Use SSH control sockets for clean management:
+Use SSH control sockets for clean management. **Set up BN and metrics tunnels in parallel** (two separate `ssh -fNL` commands can run simultaneously since they use different local ports):
+
 ```
 SSH_CONTROL="/tmp/remote-verify-%r@%h:%p"
-ssh -fNL $LOCAL_PORT:localhost:$REMOTE_BN_PORT \
+
+# Find two free ports at once
+python3 -c "
+import socket
+ports = []
+for _ in range(2):
+    s = socket.socket()
+    s.bind(('', 0))
+    ports.append(s.getsockname()[1])
+    s.close()
+print(' '.join(map(str, ports)))
+"
+
+# BN tunnel
+ssh -fNL $LOCAL_BN_PORT:localhost:$REMOTE_BN_PORT \
+    -o "ControlMaster=auto" \
+    -o "ControlPath=$SSH_CONTROL" \
+    -o "ExitOnForwardFailure=yes" \
+    $SSH_HOST
+
+# Metrics tunnel (run in parallel with BN tunnel)
+ssh -fNL $LOCAL_METRICS_PORT:localhost:$REMOTE_METRICS_PORT \
     -o "ControlMaster=auto" \
     -o "ControlPath=$SSH_CONTROL" \
     -o "ExitOnForwardFailure=yes" \
     $SSH_HOST
 ```
 
-**Port selection**: Find a free port with:
-```
-python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()"
-```
+Run both `ssh -fNL` commands using parallel Bash tool calls — they are independent and the second reuses the ControlMaster established by the first.
 
-**Multi-node**: Each host gets its own tunnel + control socket. Track mapping of `host → local_port` internally.
+**Multi-node**: Each host gets its own tunnels (BN + metrics) + control socket. Track mapping of `host → {local_bn_port, local_metrics_port}` internally.
 
 **If SSH hangs**: Likely waiting for a passphrase. Tell the user to check `ssh-agent` is running and key is added (`ssh-add -l`).
 
