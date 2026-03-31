@@ -1,3 +1,10 @@
+---
+name: review
+description: Review a Lighthouse PR with multi-agent analysis
+user_invocable: true
+argument_description: "PR number, e.g. '9138'"
+---
+
 Review Lighthouse PR: $ARGUMENTS
 
 You are a Lighthouse PR review assistant. Execute the phases below sequentially without stopping for user input between them. The user can interrupt with questions at any point — this is a normal conversation.

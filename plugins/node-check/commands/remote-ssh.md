@@ -1,5 +1,5 @@
 ---
-name: verify
+name: remote-ssh
 description: Verify a user-defined condition against remote beacon node(s) via SSH and Grafana
 user_invocable: true
 argument_description: "Any verifiable condition, e.g. 'check head is advancing for 5 mins', 'show me validator_count metric for 2 epochs', 'check for ERROR logs across all nodes'"
@@ -30,7 +30,7 @@ Condition: $ARGUMENTS
 
 **Observation window**: Timing starts ONLY after SSH tunnel is up AND beacon API responds with advancing head slot. Never count connection setup time.
 
-**Condition patterns** (same as kurtosis-verify):
+**Condition patterns** (same as node-check:kurtosis):
 - *Absence* ("no missed slots", "no ERROR logs"): fail-fast on first violation, PASS only if the full window elapses clean.
 - *Accumulation* ("stats on span X", "attestation performance"): collect data in intervals, aggregate and report at the end.
 - *Per-slot/epoch reporting* ("print head slot every slot for 3 epochs"): query at each slot boundary (every `SECONDS_PER_SLOT`), not wall-clock intervals.
@@ -59,7 +59,7 @@ If `$ARGUMENTS` contains `--host`, parse the following flags before any other st
 - Everything after a standalone `--` separator is the **verification condition**
 
 If inline params are present:
-1. Use them directly — **skip Step 1b** (interactive prompts) and **skip AskUserQuestion entirely**. When deploy-pr-test hands off with `--host`, `--bn-port`, `--log-source`, there is no ambiguity — proceed without confirmation.
+1. Use them directly — **skip Step 1b** (interactive prompts) and **skip AskUserQuestion entirely**. When deploy-pr hands off with `--host`, `--bn-port`, `--log-source`, there is no ambiguity — proceed without confirmation.
 2. Save host entry to `.remote-verify-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false). If `--log-source` is provided, use that instead of the default.
 3. If `--grafana-url`, `--grafana-user`, `--grafana-pass` are provided, use them for this session — **skip `.env` loading** for Grafana in Step 2.
 4. The verification condition is whatever follows `--` (not the original full `$ARGUMENTS`).

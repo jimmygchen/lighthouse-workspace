@@ -1,11 +1,11 @@
 ---
-name: deploy-pr-test
+name: deploy-pr
 description: Provision a Hetzner dev box, start a Kurtosis testnet with a PR branch, and optionally verify behavior
 user_invocable: true
 argument_description: "<pr_number> [verification condition], e.g. '1234 check head advances for 5 mins'"
 ---
 
-Provision a dev box, deploy a Kurtosis testnet with a PR branch, and optionally hand off to `/remote-verify:verify` for verification.
+Provision a dev box, deploy a Kurtosis testnet with a PR branch, and optionally hand off to `/node-check:remote-ssh` for verification.
 
 Arguments: $ARGUMENTS
 
@@ -167,16 +167,16 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:<local_grafana_port>/api
 
 ### Step 10 — Hand off or print details
 
-**If a verification condition was provided**, invoke the remote-verify skill.
+**If a verification condition was provided**, invoke the node-check:remote-ssh skill.
 
 If the Grafana tunnel was successfully established (Step 9 health check returned 200), include Grafana params:
 ```
-/remote-verify:verify --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <condition>
+/node-check:remote-ssh --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <condition>
 ```
 
-If the Grafana tunnel failed, omit Grafana params (remote-verify will use beacon API and logs only):
+If the Grafana tunnel failed, omit Grafana params (node-check:remote-ssh will use beacon API and logs only):
 ```
-/remote-verify:verify --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --log-source /tmp/lighthouse-cl-1.log -- <condition>
+/node-check:remote-ssh --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --log-source /tmp/lighthouse-cl-1.log -- <condition>
 ```
 
 **If no condition was provided**, print connection details:
@@ -191,7 +191,7 @@ Connection details:
   Logs:       ssh root@<ip> "tail -f /tmp/lighthouse-cl-1.log"
 
 To verify:
-  /remote-verify:verify --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <your condition>
+  /node-check:remote-ssh --host root@<ip> --bn-port <beacon_port> --metrics-port <metrics_port> --grafana-url http://localhost:<local_grafana_port> --grafana-user admin --grafana-pass changeme --log-source /tmp/lighthouse-cl-1.log -- <your condition>
 
 Cleanup:
   - Box auto-expires tomorrow (<expiry_date>)

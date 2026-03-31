@@ -1,0 +1,5 @@
+{
+  "name": "node-check",
+  "description": "Verify beacon node behavior via Kurtosis local testnet or remote SSH",
+  "version": "0.1.0"
+}

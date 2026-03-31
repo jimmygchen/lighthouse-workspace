@@ -1,5 +1,5 @@
 ---
-name: verify
+name: kurtosis
 description: Spin up a Kurtosis local testnet and verify any user-defined condition against it
 user_invocable: true
 argument_description: "Any verifiable condition, e.g. 'run for 5 mins and make sure no missed slots', 'give me stats on fork_choice_write_lock span', 'using sigp/lighthouse:latest check head advances'"

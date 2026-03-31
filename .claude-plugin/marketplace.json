@@ -11,15 +11,9 @@
       "version": "0.1.0"
     },
     {
-      "name": "kurtosis-verify",
-      "source": "./plugins/kurtosis-verify",
-      "description": "Start a Kurtosis local testnet and verify behavior via traces, metrics, logs, or beacon API",
-      "version": "0.1.0"
-    },
-    {
-      "name": "remote-verify",
-      "source": "./plugins/remote-verify",
-      "description": "Verify behavior on remote nodes via SSH and Grafana",
+      "name": "node-check",
+      "source": "./plugins/node-check",
+      "description": "Verify beacon node behavior via Kurtosis local testnet or remote SSH",
       "version": "0.1.0"
     }
   ]
