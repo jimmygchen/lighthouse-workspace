@@ -15,5 +15,9 @@ shared-target/
 # OS files
 .DS_Store
 
+# Credentials and local config
+.env
+.remote-verify-config.json
+
 # Claude Code local settings (user-specific permissions)
 .claude/settings.local.json
