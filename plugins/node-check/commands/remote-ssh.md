@@ -9,6 +9,21 @@ Verify a user-defined condition against remote beacon node(s). The condition can
 
 Condition: $ARGUMENTS
 
+## Remote host safety
+
+**CRITICAL — All SSH commands on the remote host MUST be read-only.**
+
+Only the following commands are permitted on the remote host (with or without `sudo`):
+- `tail` — read log file contents
+- `head` — read log file contents
+- `cat` — read log file contents
+- `grep` — search log file contents
+- `journalctl` — read systemd journal. ONLY these flags are permitted: `--since`, `--no-pager`, `-o cat`, `-u`. NEVER use `--vacuum-size`, `--vacuum-time`, `--rotate`, or any flag not listed here
+- `ls` — list directory contents
+- `curl -s` — GET requests to localhost only (e.g. `curl -s http://localhost:$PORT/metrics`). NEVER use `-X`, `-d`, `--data`, `--request`, or any flag that changes the HTTP method or adds a request body
+
+**NEVER run any command not on this list.** No exceptions, no output redirection (`>`, `>>`).
+
 ## Credential safety
 
 **CRITICAL — NEVER violate these rules:**
@@ -253,14 +268,14 @@ UTC_SINCE=$(date -u -d '5 hours ago' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u
 
 **File-based logs**:
 - Recent lines: `ssh $HOST "tail -n 1000 $LOG_PATH"`
-- Time-bounded: `ssh $HOST "awk '\$0 >= \"$UTC_SINCE\"' $LOG_PATH | tail -n 500"` — assumes log lines start with a sortable timestamp (ISO 8601 or similar). If log format is different, use `grep` with the date prefix instead.
+- Time-bounded: `ssh $HOST "grep '^$DATE_PREFIX' $LOG_PATH | tail -n 500"` — extract the date prefix from `$UTC_SINCE` (e.g. `2026-04-01`) and grep for lines starting with it. For finer granularity, use the full timestamp prefix.
 - Pattern search: `ssh $HOST "grep '$PATTERN' $LOG_PATH | tail -n 100"`
-- Time + pattern: `ssh $HOST "awk '\$0 >= \"$UTC_SINCE\"' $LOG_PATH | grep '$PATTERN' | tail -n 100"`
+- Time + pattern: `ssh $HOST "grep '^$DATE_PREFIX' $LOG_PATH | grep '$PATTERN' | tail -n 100"`
 
 **Journalctl logs**:
 - Recent: `ssh $HOST "journalctl -u lighthouse-bn --since '$UTC_SINCE' --no-pager -o cat"`
 - Pattern search: `ssh $HOST "journalctl -u lighthouse-bn --since '$UTC_SINCE' --no-pager -o cat | grep '$PATTERN'"`
-- Default unit is `lighthouse-bn`. If it returns no entries, auto-detect with `ssh $HOST "systemctl list-units --type=service | grep -i lighthouse"` and use whatever is found.
+- Default unit is `lighthouse-bn`. If it returns no entries, try `lighthouse-beacon`, then `lighthouse`. If none work, tell the user and ask for the unit name.
 
 **Sudo for logs**: Always use `sudo` when reading log files or journalctl via SSH. The SSH user typically has sudo access, and using it by default avoids a wasted "Permission denied" retry cycle. If sudo fails with "sudo: not found" or similar, fall back to non-sudo for the rest of the session.
 
