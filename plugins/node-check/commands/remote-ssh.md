@@ -60,7 +60,7 @@ If `$ARGUMENTS` contains `--host`, parse the following flags before any other st
 
 If inline params are present:
 1. Use them directly — **skip Step 1b** (interactive prompts) and **skip AskUserQuestion entirely**. When deploy-pr hands off with `--host`, `--bn-port`, `--log-source`, there is no ambiguity — proceed without confirmation.
-2. Save host entry to `.node-check-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false). If `--log-source` is provided, use that instead of the default.
+2. Save host entry to `.node-check-config.json` (same format as Step 1c — merge/deduplicate with existing entries). Use defaults for any unspecified per-host fields (log_source=/var/log/lighthouse/beacon.log, metrics_port=5054). If `--log-source` is provided, use that instead of the default.
 3. If `--grafana-url`, `--grafana-user`, `--grafana-pass` are provided, use them for this session — **skip `.env` loading** for Grafana in Step 2.
 4. The verification condition is whatever follows `--` (not the original full `$ARGUMENTS`).
 5. Proceed to SSH tunnel setup (Step 3) for beacon API only. If `--grafana-url` was provided, it is already tunneled — do not create an additional Grafana tunnel.
@@ -81,7 +81,7 @@ Do NOT run ANY other tools before this step. No Bash commands. No tunnel checks.
 
 **Step 1b — First run** (no config file):
 
-Output this exact text and wait for the user's reply. Do NOT use AskUserQuestion. Use defaults for all other settings (log source=/var/log/lighthouse/beacon.log, journal unit=lighthouse-bn, metrics port=5054).
+Output this exact text and wait for the user's reply. Do NOT use AskUserQuestion. Use defaults for all other settings (log source=/var/log/lighthouse/beacon.log, metrics port=5054).
 ```
 Enter SSH host(s) to connect to (comma-separated for multiple, port optional — e.g. user@host1:5052, user@host2):
 ```
@@ -127,12 +127,12 @@ Replace all `<placeholder>` values with actual values from config file. Only inc
 ```json
 {
   "hosts": [
-    {"host": "user@node1", "bn_port": "5052", "log_source": "/var/log/lighthouse/beacon.log", "journal_unit": "lighthouse-bn", "metrics_port": "5054", "sudo_logs": false},
-    {"host": "user@node2", "bn_port": "5053", "log_source": "journal", "journal_unit": "lighthouse-bn", "metrics_port": "5054", "sudo_logs": true}
+    {"host": "user@node1", "bn_port": "5052", "log_source": "/var/log/lighthouse/beacon.log", "metrics_port": "5054"},
+    {"host": "user@node2", "bn_port": "5053", "log_source": "journal", "metrics_port": "5054"}
   ]
 }
 ```
-All settings are per-host. Merge selected previous hosts + any new "Other" input. Deduplicate by host. New hosts inherit defaults (bn_port=5052, log_source=/var/log/lighthouse/beacon.log, journal_unit=lighthouse-bn, metrics_port=5054, sudo_logs=false).
+All settings are per-host. Merge selected previous hosts + any new "Other" input. Deduplicate by host. New hosts inherit defaults (bn_port=5052, log_source=/var/log/lighthouse/beacon.log, metrics_port=5054).
 
 ### 2. Load credentials from `.env`
 
@@ -184,6 +184,13 @@ Run both `ssh -fNL` commands using parallel Bash tool calls — they are indepen
 ### 4. Detect network
 
 Query `/eth/v1/config/spec` → extract `SECONDS_PER_SLOT`, `SLOTS_PER_EPOCH`. Confirm chain health (head slot advancing across 2 queries spaced 1 slot apart).
+
+**If the beacon API fails** (connection refused, HTTP error, or non-JSON response after 2 attempts):
+1. Do NOT keep retrying the API or debugging the connection in a loop.
+2. Immediately check logs via SSH to diagnose. Use the configured log source to grab the last ~50 lines: `ssh $HOST "tail -n 50 $LOG_PATH"` (or journalctl equivalent). Report what the logs show.
+3. Also try the raw metrics endpoint (`curl -s http://localhost:$LOCAL_METRICS_PORT/metrics | head -5`) — metrics may be up even if the API is behind a reverse proxy or misconfigured.
+4. If metrics work but the API doesn't, tell the user the likely cause (e.g. nginx/reverse proxy, wrong port) and ask for the correct BN API port. Continue with metrics + logs in the meantime.
+5. If neither API nor metrics respond, report the log output and stop — don't spin.
 
 ### 5. Teardown
 
@@ -253,9 +260,9 @@ UTC_SINCE=$(date -u -d '5 hours ago' '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u
 **Journalctl logs**:
 - Recent: `ssh $HOST "journalctl -u lighthouse-bn --since '$UTC_SINCE' --no-pager -o cat"`
 - Pattern search: `ssh $HOST "journalctl -u lighthouse-bn --since '$UTC_SINCE' --no-pager -o cat | grep '$PATTERN'"`
-- The systemd unit name defaults to `lighthouse-bn` but can be overridden by the user during setup.
+- Default unit is `lighthouse-bn`. If it returns no entries, auto-detect with `ssh $HOST "systemctl list-units --type=service | grep -i lighthouse"` and use whatever is found.
 
-**Sudo auto-detection**: If a log command returns "Permission denied", retry once with `sudo` prepended. If sudo works, remember it and use `sudo` for all subsequent log commands in this session. Save `"sudo_logs": true` to the config file so future runs use sudo from the start.
+**Sudo for logs**: Always use `sudo` when reading log files or journalctl via SSH. The SSH user typically has sudo access, and using it by default avoids a wasted "Permission denied" retry cycle. If sudo fails with "sudo: not found" or similar, fall back to non-sudo for the rest of the session.
 
 **IMPORTANT: Never use `tail -f`** — it will hang the bash tool (2-minute timeout, no streaming). Instead, poll with `tail -n N` or `journalctl --since` at each observation interval.
 
