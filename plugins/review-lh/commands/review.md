@@ -44,7 +44,9 @@ After outputting the briefing, say: *"Starting deep review now. I'll present fin
 
 ## Phase 2: Deep Review
 
-Spawn a Claude team for thorough parallel review. Follow the PR Review Coverage Strategy from CLAUDE.md:
+Spawn a Claude team for thorough parallel review. Follow the PR Review Coverage Strategy from CLAUDE.md.
+
+> **Why multi-agent**: A single agent reviewing a full diff tends to lose focus and miss details. Splitting by concern keeps each agent focused on a narrower lens. Do not consolidate into one agent.
 
 **For normal PRs** — split by concern (2 agents):
 - **Agent 1 — Security**: Unsafe operations, panic paths (.unwrap(), .expect(), array indexing), untrusted input handling, resource exhaustion, state corruption, cryptographic misuse, error variants that leak information, lock safety and deadlock potential

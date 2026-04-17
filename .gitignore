@@ -5,6 +5,8 @@ lighthouse/
 worktrees/
 lighthouse-*/
 
+lighthouse-kg/
+
 # Shared build artifacts
 shared-target/
 
@@ -21,3 +23,9 @@ shared-target/
 
 # Claude Code local settings (user-specific permissions)
 .claude/settings.local.json
+
+# Claude Code auto-memory (user-specific, per-machine)
+.claude/projects/
+
+# Project MCP servers (contains secrets)
+.mcp.json

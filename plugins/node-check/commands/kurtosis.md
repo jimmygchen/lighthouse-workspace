@@ -22,9 +22,22 @@ Condition: $ARGUMENTS
 - *Accumulation* ("give me stats on span X", "sync 1000 slots"): collect data in intervals, aggregate and report at the end.
 - *Per-slot/epoch reporting* ("print values every slot for 3 epochs"): query at each slot boundary (every 3s), not wall-clock intervals.
 
+## Testing a specific PR
+
+If the condition references a PR (URL or `#NNNN`), first resolve its branch and set up a worktree **before** the enclave lifecycle below:
+
+1. `gh pr view <N> --json headRefName,headRepositoryOwner` — get branch name and fork owner (login).
+2. Check `git worktree list` — if an existing worktree already has the PR branch checked out, ask the user which to use. Otherwise:
+3. From `<workspace>/lighthouse`: `git fetch <fork-owner> <branch>` then create a worktree:
+   ```bash
+   git worktree add -b "pr-<N>-<slug>" "../worktrees/lighthouse-pr-<N>-<slug>" FETCH_HEAD && \
+   echo "gitdir: ../../lighthouse/.git/worktrees/lighthouse-pr-<N>-<slug>" > "../worktrees/lighthouse-pr-<N>-<slug>/.git"
+   ```
+4. `cd` into the new worktree and run the enclave lifecycle from there (fresh build). Always rebuild fresh for a PR test — do not reuse an existing enclave unless the user says so.
+
 ## Enclave lifecycle
 
-1. `kurtosis enclave inspect local-testnet` — if running, detect LH version via `/eth/v1/node/version` and ask user to reuse or rebuild.
+1. `kurtosis enclave inspect local-testnet` — if running, detect LH version via `/eth/v1/node/version` and ask user to reuse or rebuild. (Skip the reuse prompt when testing a PR — always rebuild.)
 2. If not running, find `start_local_testnet.sh` in `scripts/local_testnet/` (check worktree path or main `lighthouse/` dir).
 
 **Two startup paths:**
