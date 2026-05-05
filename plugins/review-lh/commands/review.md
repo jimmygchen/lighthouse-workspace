@@ -11,7 +11,7 @@ You are a Lighthouse PR review assistant. Execute the phases below sequentially 
 
 **Before starting**: Read `./lighthouse/CLAUDE.md` and `./lighthouse/.ai/CODE_REVIEW.md` for review standards and coding guidelines.
 
-**Spec submodules**: If `plugins/review-lh/specs/consensus-specs/` is empty, run `git submodule update --init --recursive` from the `plugins/review-lh/` directory before proceeding.
+**Spec submodules**: If `plugins/eth-spec/specs/consensus-specs/` is empty, run `git submodule update --init --recursive -- plugins/eth-spec/specs/` from the workspace root before proceeding.
 
 ---
 
@@ -24,7 +24,7 @@ What the PR does, why, which subsystems it touches. Assess risk level (low/mediu
 
 ### Spec Context
 If the PR implements or modifies spec behavior:
-- Identify relevant spec sections from `plugins/review-lh/specs/` (consensus-specs, beacon-APIs, builder-specs, execution-apis, keymanager-APIs)
+- Identify relevant spec sections from `plugins/eth-spec/specs/` (consensus-specs, beacon-APIs, builder-specs, execution-apis, keymanager-APIs)
 - Explain what the code *should* do per spec in plain language, not just links
 - Note any deviations or implementation choices vs spec
 
@@ -57,7 +57,7 @@ Spawn a Claude team for thorough parallel review. Follow the PR Review Coverage 
 **Each agent must**:
 - Read `./lighthouse/CLAUDE.md` and `./lighthouse/.ai/CODE_REVIEW.md` first
 - Fetch the full PR diff with `gh pr diff $PR_NUMBER`
-- Check spec compliance against `plugins/review-lh/specs/` submodules where relevant
+- Check spec compliance against `plugins/eth-spec/specs/` submodules where relevant
 - Compare new code against analogous existing patterns in the codebase
 - Apply the "Before Approval Checklist" from CODE_REVIEW.md
 

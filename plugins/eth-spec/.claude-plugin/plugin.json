@@ -1,0 +1,5 @@
+{
+  "name": "eth-spec",
+  "description": "Look up Ethereum consensus, execution, beacon API, builder, and keymanager specs locally",
+  "version": "0.1.0"
+}

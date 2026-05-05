@@ -11,6 +11,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "eth-spec",
+      "source": "./plugins/eth-spec",
+      "description": "Look up Ethereum consensus, execution, beacon API, builder, and keymanager specs locally",
+      "version": "0.1.0"
+    },
+    {
       "name": "node-check",
       "source": "./plugins/node-check",
       "description": "Verify beacon node behavior via Kurtosis local testnet or remote SSH",
