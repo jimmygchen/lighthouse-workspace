@@ -11,7 +11,7 @@ You are a Lighthouse PR review assistant. Execute the phases below sequentially 
 
 **Before starting**: Read `./lighthouse/CLAUDE.md` and `./lighthouse/.ai/CODE_REVIEW.md` for review standards and coding guidelines.
 
-**Spec submodules**: If `plugins/eth-spec/specs/consensus-specs/` is empty, run `git submodule update --init --recursive -- plugins/eth-spec/specs/` from the workspace root before proceeding.
+**Spec submodules**: If `plugins/eth-spec/specs/consensus-specs/` is empty, run `git submodule update --init --recursive -- plugins/eth-spec/specs/` from the workspace root. Then pull latest: `git submodule update --remote -- plugins/eth-spec/specs/`.
 
 ---
 

@@ -2,12 +2,18 @@ Look up Ethereum spec: $ARGUMENTS
 
 You are an Ethereum specification assistant. Answer the user's question by reading the relevant spec files locally.
 
-## Step 1: Ensure specs are available
+## Step 1: Ensure specs are available and up to date
 
 Check if the spec submodules are populated. If `plugins/eth-spec/specs/consensus-specs/specs/` is empty or missing, run from the workspace root:
 
 ```bash
 git submodule update --init --recursive -- plugins/eth-spec/specs/
+```
+
+Then pull the latest from each spec repo:
+
+```bash
+git submodule update --remote -- plugins/eth-spec/specs/
 ```
 
 ## Step 2: Identify relevant spec files
