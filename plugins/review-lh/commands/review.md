@@ -48,11 +48,12 @@ Spawn a Claude team for thorough parallel review. Follow the PR Review Coverage 
 
 > **Why multi-agent**: A single agent reviewing a full diff tends to lose focus and miss details. Splitting by concern keeps each agent focused on a narrower lens. Do not consolidate into one agent.
 
-**For normal PRs** — split by concern (2 agents):
+**For normal PRs** — split by concern (3 agents):
 - **Agent 1 — Security**: Unsafe operations, panic paths (.unwrap(), .expect(), array indexing), untrusted input handling, resource exhaustion, state corruption, cryptographic misuse, error variants that leak information, lock safety and deadlock potential
 - **Agent 2 — Quality/Resilience**: Error handling patterns (silent swallowing, missing context), code clarity and naming, test coverage gaps, edge cases, API consistency, graceful degradation, codebase convention adherence, safe math in consensus code
+- **Agent 3 — Simplification**: Missed reuse of existing helper methods or trait implementations in the codebase (grep for them), redundant match arms that could use wildcards, manual iteration replaceable by iterator combinators, duplicated logic across the PR that should be extracted, unnecessary clones or allocations, over-engineering relative to what the PR needs to do. Suggest concrete rewrites with code snippets, not vague "consider simplifying" notes. Reference CODE_REVIEW.md anti-patterns as your primary rubric.
 
-**For large PRs** (10+ changed files spanning multiple subsystems) — split by crate/layer instead, with both security and quality lenses per agent.
+**For large PRs** (10+ changed files spanning multiple subsystems) — split by crate/layer instead, with all three lenses per agent.
 
 **Each agent must**:
 - Read `./lighthouse/CLAUDE.md` and `./lighthouse/.ai/CODE_REVIEW.md` first
@@ -63,8 +64,8 @@ Spawn a Claude team for thorough parallel review. Follow the PR Review Coverage 
 
 **Present findings in this format:**
 
-### Confidence Map
-Which areas were thoroughly checked vs areas that need more human attention (e.g., "Networking changes: high confidence. Consensus math: reviewed but complex — recommend manual verification.").
+### Coverage Map
+Which areas were thoroughly checked vs areas that need more human attention (e.g., "Networking changes: high confidence. Consensus math: reviewed but complex - recommend manual verification.").
 
 ### Issues (must fix)
 Correctness bugs, panics, security problems, consensus safety violations, missing error handling that could cause data loss. Each finding: `file:line` — what's wrong, why it matters.
@@ -75,7 +76,36 @@ Design improvements, missing test coverage, unclear naming, non-idiomatic patter
 ### Observations (informational)
 Style notes, minor improvements, things that are fine but worth noting. Keep brief.
 
-For any category with no findings, output "Nothing found" so the user knows it was checked. Overlap between agents on the same finding is a signal it's worth fixing — note these.
+For any category with no findings, output "Nothing found" so the user knows it was checked.
+
+**Important**: Each review agent must include evidence inline with each finding (e.g., "this duplicates `fn foo` at `bar.rs:42`", "CODE_REVIEW.md requires X") so that confidence scorers can evaluate without needing codebase access.
+
+**Do not present raw agent findings to the user.** Collect them internally and pass them to confidence scoring below. Only the filtered results are shown.
+
+---
+
+## Phase 2.5: Confidence Scoring
+
+The **main orchestrating agent** (not the review agents) performs this step after collecting all agent results. If no Issues or Suggestions were found across all agents, skip this phase and proceed to Phase 3.
+
+1. **Deduplicate**: Merge findings that reference the same code location and issue. When multiple agents independently flagged the same problem, note the overlap and keep the most detailed version.
+2. Collect all Issues and Suggestions into a numbered list. Observations pass through unscored.
+3. Spawn parallel **Haiku agents** to score confidence 0-100. Batch findings per review agent (one Haiku call per agent's findings, not one per finding). Each scorer receives the agent's findings with their inline evidence, the relevant diff hunks, and the CODE_REVIEW.md. Use this rubric (pass it verbatim to each scorer):
+   - **0**: False positive. Doesn't hold up to scrutiny, or is a pre-existing issue not introduced by this PR.
+   - **25**: Might be real, but could also be a false positive. Unable to verify. Stylistic issues not explicitly called out in CODE_REVIEW.md.
+   - **50**: Real issue, but minor or unlikely to hit in practice. Not important relative to the rest of the PR.
+   - **75**: Very likely real. The evidence provided by the reviewer confirms the issue. Important and will directly impact functionality, or explicitly mentioned in CODE_REVIEW.md/CLAUDE.md.
+   - **100**: Definitely real. Strong evidence confirms this. Will happen frequently in practice.
+4. **Filter out findings scoring below 75.** For each surviving finding, append its score in brackets, e.g. `[confidence: 85]`.
+5. Present the filtered findings to the user using the Coverage Map / Issues / Suggestions / Observations format from Phase 2.
+
+**False positive examples to filter:**
+- Pre-existing issues not introduced by this PR
+- Issues a compiler, linter, or type checker would catch
+- Pedantic nitpicks a senior Rust engineer wouldn't flag
+- General quality concerns not backed by CODE_REVIEW.md
+- Changes in functionality that are clearly intentional
+- Issues on lines the PR did not modify
 
 ---
 
