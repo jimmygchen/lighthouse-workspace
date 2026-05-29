@@ -1,0 +1,3 @@
+display_name: Ethereum Spec
+short_description: Look up local Ethereum consensus, API, builder, execution, and keymanager specs.
+default_prompt: Look up the relevant Ethereum spec locally and explain the rule with file references.
