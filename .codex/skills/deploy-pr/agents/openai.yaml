@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Lighthouse PR"
+  short_description: "Deploy a Lighthouse PR to a dev testnet."
+  default_prompt: "Use $deploy-pr to deploy Lighthouse PR <number> and optionally verify a condition."

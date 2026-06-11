@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Lighthouse Issue"
+  short_description: "Draft Lighthouse GitHub issues."
+  default_prompt: "Use $create-lh-issue to draft a Lighthouse GitHub issue for this problem."

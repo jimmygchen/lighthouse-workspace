@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lighthouse Release Notes"
+  short_description: "Draft Lighthouse release notes and announcements."
+  default_prompt: "Use $lh-release-notes to draft release notes for Lighthouse <version>."
