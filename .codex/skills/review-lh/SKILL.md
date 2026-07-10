@@ -1,6 +1,6 @@
 ---
 name: review-lh
-description: Review Lighthouse GitHub pull requests from the Lighthouse workspace with a current PR briefing, spec-aware analysis, focused multi-pass or multi-agent review, confidence filtering, and existing comment triage. Use when the user asks to review a Lighthouse PR, run the Lighthouse review workflow, or invokes review-lh/lh-review/lh-reeview.
+description: Review Lighthouse GitHub pull request code changes from the Lighthouse workspace with a current PR briefing, spec-aware analysis, focused multi-pass or multi-agent review, confidence filtering, and existing comment triage. Use when the user asks for a code review of a Lighthouse PR, requests the Lighthouse review workflow, or invokes review-lh/lh-review/lh-reeview. Do not use for PR title or body copy review, status checks, link verification, metadata inspection, or other non-code PR questions unless explicitly invoked.
 ---
 
 # Lighthouse PR Review

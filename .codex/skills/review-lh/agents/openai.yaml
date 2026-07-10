@@ -1,4 +1,4 @@
 interface:
   display_name: "Lighthouse PR Review"
-  short_description: "Review Lighthouse PRs with spec-aware analysis."
+  short_description: "Review Lighthouse PR code with spec-aware analysis."
   default_prompt: "Use $review-lh to review Lighthouse PR <number>."
