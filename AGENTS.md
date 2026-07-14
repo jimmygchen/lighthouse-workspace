@@ -15,6 +15,39 @@ Before making code changes in Lighthouse, read:
 For code review work, also read `./lighthouse/.ai/CODE_REVIEW.md`. For issues
 and PR descriptions, read `./lighthouse/.ai/ISSUES.md`.
 
+## Lighthouse Performance Experiments
+
+Before running an expensive benchmark or E2E measurement, trace the real
+production caller and scheduler. Classify the measured work as block-import
+critical, synchronous fallback, or proactive/background work, and record:
+
+- the representative production input and execution cadence;
+- the span or timer that directly measures the optimized work;
+- the production claim the measurement can support;
+- the evidence needed to stop the investigation.
+
+Prefer the smallest measurement that answers the open question. Do not add a
+secondary harness when existing evidence is already sufficient unless it
+resolves a specific uncertainty. Use Lighthouse symbols and established terms
+in reports, and state clearly when a result does not measure normal block
+processing or another critical path.
+
+## Production PR Readability
+
+Before the first production commit or push, review the final diff separately
+from the experiment history:
+
+- Keep temporary workflows, tracing, profiling drivers, orchestration, and
+  other experiment-only code off the production branch.
+- Remove redundant generated tests and unexplained test data. Keep the smallest
+  test matrix that protects the relevant behavior and boundaries.
+- Add comments only where they explain a non-obvious reason or invariant. Prefer
+  clear names over comments that restate the code.
+- Use exact Lighthouse names and terminology instead of introducing new phrases.
+- Keep PR titles and bodies concise and readable. Focus on the production change,
+  relevant performance evidence, and material trade-offs. Include routine test
+  lists only when they add reviewer value.
+
 ## Worktree Rules
 
 - Use `./lighthouse/` for read-only exploration.
