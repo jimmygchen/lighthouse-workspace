@@ -82,6 +82,9 @@ The workspace-level `.cargo/config.toml` points all worktrees at
 ## Git Conventions
 
 - Leave commits to the user unless explicitly asked.
+- Before rebasing or otherwise rewriting a published branch, verify the remote
+  tip and stop for explicit approval. Approval to commit or push does not
+  approve a history rewrite.
 - Never push to `origin` (`sigp/lighthouse`) for personal branches; use the
   user's fork remote.
 - Do not add AI attribution footers or `Co-Authored-By` lines.
