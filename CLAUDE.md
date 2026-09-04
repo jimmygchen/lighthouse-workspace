@@ -141,27 +141,16 @@ cd lighthouse && git worktree prune
 
 ### For Code Review
 - **CRITICAL**: ALWAYS read `./lighthouse/.ai/CODE_REVIEW.md` AND `./lighthouse/CLAUDE.md` before starting any review
-- **Format**: Follow the code review guidelines strictly - concise comments with natural, conversational language
-- **Code comments**: Comment directly on specific lines using `gh pr review --comment` with file path and line number
+- **GitHub comment format**: Follow the code review guidelines strictly - concise comments with natural, conversational language
+- **Inline GitHub comments**: Comment directly on specific lines using `gh pr review --comment` with file path and line number
   - No limit on number of code comments - add as many as needed for correctness, safety, and clarity issues
-- **General review comments**: Use for non-code issues (PR description, missing tracking issues, etc.) - limit to 3-5 items
-- **Absolutely NO**:
+- **Top-level GitHub comments**: Use for non-code issues (PR description, missing tracking issues, etc.) - limit to 3-5 items
+- **Do not use these in GitHub comments**:
   - Review summary sections or overall assessments
   - Checkmarks (✅/❌) for positive/negative observations
   - Structured formatting with headers and subsections
   - Verbose explanations with multiple paragraphs
 - **User approval required**: Always show proposed comments and wait for user approval before publishing to GitHub
-
-#### PR Review Coverage Strategy
-
-For thorough PR reviews, spawn **two parallel agents split by concern** rather than by crate:
-
-1. **Agent 1 — Security**: Unsafe operations, panic paths, untrusted input handling, resource exhaustion, state corruption, cryptographic misuse, error variants that leak information
-2. **Agent 2 — Quality/Resilience**: Error handling patterns, code clarity, test coverage, edge cases, API consistency, graceful degradation, codebase convention adherence
-
-Both agents read the full diff but filter through their respective lens. Overlap between agents (e.g., missing error handling flagged by both) is a signal the issue is worth fixing.
-
-**Split by crate instead only when** the PR is too large for a single agent to hold the full diff in context. In that case, give each per-crate agent both lenses.
 
 ### For Issues and PRs
 

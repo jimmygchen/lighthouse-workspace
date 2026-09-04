@@ -1,140 +1,97 @@
 ---
 name: review-lh
-description: Review Lighthouse GitHub pull request code changes from the Lighthouse workspace with a current PR briefing, spec-aware analysis, focused multi-pass or multi-agent review, confidence filtering, and existing comment triage. Use when the user asks for a code review of a Lighthouse PR, requests the Lighthouse review workflow, or invokes review-lh/lh-review/lh-reeview. Do not use for PR title or body copy review, status checks, link verification, metadata inspection, or other non-code PR questions unless explicitly invoked.
+description: Review Lighthouse GitHub pull request code with the code-review workflow, current GitHub state, repository guidance, and Ethereum specification evidence. Use for Lighthouse pull request code reviews and explicit review-lh/lh-review/lh-reeview requests. Do not use for pull request title or body copy, status, links, or metadata unless explicitly invoked.
 ---
 
-# Lighthouse PR Review
+# Lighthouse PR Review Adapter
 
 Use this skill from `/home/jimmy/workspace/lighthouse-workspace`.
 
-The target is a Lighthouse GitHub PR, usually provided as a number. Always fetch
-the current PR state with `gh`; do not rely on cached local diffs.
+The target is a Lighthouse GitHub pull request, usually provided as a number.
+This skill supplies Lighthouse context to the `code-review` skill. It does not
+define a second review workflow.
 
-## Required Context
+## Authoritative Workflow
 
-Before reviewing, read:
+Load and apply the `code-review` skill. It owns the value and design gates,
+fixed review contract, adaptive reviewer topology, candidate verification,
+readiness verdict, and convergence rules.
+
+Use the workspace and repository guidance for Lighthouse-specific rules and
+publishing constraints. Do not replace `code-review` gates or verification with
+reviewer agreement, a fixed reviewer count, file-count thresholds, or
+confidence scores.
+
+## Lighthouse Inputs
+
+Read these files before the implementation review:
 
 - `./CLAUDE.md`
 - `./lighthouse/CLAUDE.md`
-- `./lighthouse/.ai/CODE_REVIEW.md` if it exists
+- `./lighthouse/.ai/CODE_REVIEW.md`
 
-If `CODE_REVIEW.md` is missing, state that once and use `CLAUDE.md`, the
-workspace review conventions, and Lighthouse coding standards as the review
-rubric.
+If `CODE_REVIEW.md` is missing, state that once. Use the other two files and
+the workspace review guidance as the Lighthouse rubric.
 
-For spec-relevant changes, use the `eth-spec` skill workflow and local specs
-under `plugins/eth-spec/specs/`. If the specs are missing, initialize them:
+Fetch the current pull request metadata from GitHub before the value gate. Do
+not treat the pull request description as independent evidence of need:
 
 ```bash
-git submodule update --init --recursive -- plugins/eth-spec/specs/
+gh pr view <PR_NUMBER> --repo sigp/lighthouse \
+  --json number,url,title,body,baseRefName,baseRefOid,headRefName,headRefOid,isDraft,state
 ```
 
-If the user asks for latest/current spec state, update them:
+After the value and design gates pass, fetch the current diff from GitHub. Do
+not use a cached local diff:
 
 ```bash
-git submodule update --remote -- plugins/eth-spec/specs/
-```
-
-## Phase 1: Briefing
-
-Fetch PR metadata and diff:
-
-```bash
-gh pr view <PR_NUMBER> --repo sigp/lighthouse
 gh pr diff <PR_NUMBER> --repo sigp/lighthouse
 ```
 
-Give a concise briefing before deep review:
+Record the exact base and head commits in the fixed review contract. Give every
+finder and verifier the same base-to-head diff. Before the final verdict, fetch
+the head commit again. If it changed, apply the convergence rules from
+`code-review`. Do not combine evidence from different heads.
 
-- Summary: what the PR changes, why, touched subsystems, and risk level
-  (low/medium/high). Raise risk for consensus-critical code, locks, database
-  schema changes, API surface changes, networking, storage, unsafe code, or
-  behavior that affects validators.
-- Spec context: relevant spec files and the rule the implementation should
-  satisfy. If no spec relevance is apparent, say so briefly.
-- Design: data flow, key abstractions, and non-obvious component interactions.
-- Review guide: recommended reading order, likely bug locations, and concrete
-  edge cases to check.
-
-End the briefing with: "Starting deep review now. I'll present findings when done."
-
-## Phase 2: Deep Review
-
-Use parallel sub-agents when available. Discover multi-agent tools with
-`tool_search` if they are not already exposed. If sub-agents are unavailable,
-perform the same passes yourself, keeping the lenses separate.
-
-For normal PRs, split by concern:
-
-- Security: unsafe operations, panics (`unwrap`, `expect`, indexing), untrusted
-  input, resource exhaustion, state corruption, cryptographic misuse, leaked
-  sensitive information, lock safety, and deadlock potential.
-- Quality/resilience: error handling, context in errors, code clarity, naming,
-  edge cases, API consistency, graceful degradation, convention adherence, test
-  coverage, and safe math in consensus code.
-- Simplification: existing helper reuse, duplicated logic, redundant match arms,
-  iterator opportunities, unnecessary clones or allocations, and over-engineered
-  control flow. Suggestions must include concrete rewrites or exact existing
-  helpers where possible.
-
-For large PRs with 10+ changed files spanning multiple subsystems, split by
-crate or layer instead, and apply all three lenses in each pass.
-
-Each pass must:
-
-- Read the required context files first.
-- Inspect the full current diff using `gh pr diff`.
-- Compare new code against analogous Lighthouse patterns using `rg`/`git grep`.
-- Check spec compliance against local specs when relevant.
-- Focus on issues introduced or exposed by the PR.
-
-Do not show raw pass or agent output. Consolidate it first.
-
-## Phase 2.5: Confidence Filtering
-
-Before presenting findings:
-
-1. Deduplicate issues that reference the same location or root cause.
-2. Discard false positives, pre-existing issues not introduced by the PR,
-   compiler/linter/type-checker catches, and intentional behavior changes.
-3. Score each remaining issue from 0 to 100:
-   - 0: false positive.
-   - 25: uncertain or stylistic without local rubric support.
-   - 50: real but minor or unlikely.
-   - 75: very likely real and important.
-   - 100: definitely real and likely to occur.
-4. Show only findings with confidence >= 75, appending `[confidence: N]`.
-
-Present results in this order:
-
-- Coverage Map: what was thoroughly checked and where residual human attention
-  is useful.
-- Issues (must fix): correctness, security, consensus safety, panic, data loss,
-  or serious error handling problems.
-- Suggestions (should consider): tests, design, naming, idioms, clarity, or
-  simplification backed by concrete evidence.
-- Observations: brief informational notes.
-
-For an empty category, write "Nothing found."
-
-Each finding should use `file:line` and explain what is wrong, why it matters,
-and the concrete fix or validation needed.
-
-## Phase 3: Existing Comment Review
-
-After the deep review, fetch existing PR comments and reviews:
+Use the pull request comment endpoints when `code-review` creates its comment
+inventory:
 
 ```bash
-gh api repos/sigp/lighthouse/pulls/<PR_NUMBER>/comments
-gh api repos/sigp/lighthouse/pulls/<PR_NUMBER>/reviews
-gh api repos/sigp/lighthouse/issues/<PR_NUMBER>/comments
+gh api --paginate repos/sigp/lighthouse/pulls/<PR_NUMBER>/comments
+gh api --paginate repos/sigp/lighthouse/pulls/<PR_NUMBER>/reviews
+gh api --paginate repos/sigp/lighthouse/issues/<PR_NUMBER>/comments
 ```
 
-Present this separately from your findings:
+## Specification Evidence
 
-- Unresolved comment threads: summarize who said what and what is pending.
-- Overlap: note where your findings are already covered.
-- Resolved threads: give a count and skip details unless needed.
+If the change is specification-relevant, load and apply the `eth-spec` skill.
+Use it to select and prepare the applicable local specification repository.
+Record the repository, fork or API version, and Git revision in the authority
+evidence for `code-review`.
 
-Finish by asking whether the user wants any findings posted as GitHub review
-comments or replies. Do not post comments without explicit approval.
+Use the exact specification version or upstream pull request that the user
+identifies. If the user does not identify one, resolve the authoritative source
+under the `code-review` rules. Do not assume that a local checkout is current.
+
+Treat consensus transitions, fork choice, validator duties, networking, SSZ,
+Beacon APIs, builder APIs, Engine APIs, and keymanager APIs as
+specification-relevant unless the diff proves otherwise.
+
+## Lighthouse Risk Context
+
+Use `lighthouse/.ai/CODE_REVIEW.md` as the project rubric, not as another review
+process. Raise the review risk and trigger the applicable `code-review` lenses
+for changes to consensus behaviour, validator behaviour, locks or async work,
+storage or schemas, networking, public APIs, unsafe code, or serialization.
+
+Compare changed code with analogous Lighthouse code by using `rg` or
+`git grep`. Check the production callers and affected fork paths, not only the
+changed function.
+
+After the value and design gates pass and the review contract is fixed, give a
+concise briefing before candidate finding. Include the change, affected
+subsystems, authoritative specification evidence, data flow, triggered risks,
+and the planned coverage. Use the final report and readiness format from
+`code-review`.
+
+Do not post GitHub review comments or replies without explicit user approval.
